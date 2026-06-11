@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
 
 // ROTA DA API DO GEMINI
 // Seu frontend deve fazer um POST EXATAMENTE para: https://seu-app.onrender.com/api/chat
-app.post('/api/chat', async (req, res) => {
+app.post('/api/gemini', async (req, res) => {
     try {
         const { prompt } = req.body;
 
