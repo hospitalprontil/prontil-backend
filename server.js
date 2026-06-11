@@ -17,7 +17,7 @@ app.post('/api/gemini', async (req, res) => {
     try {
         // Mudamos de v1beta para v1 (mais estável) e garantimos o nome do modelo
         // Se ainda der erro, troque 'gemini-1.5-flash' por 'gemini-1.5-flash-latest'
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
         
         const googleResponse = await fetch(url, {
             method: 'POST',
