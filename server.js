@@ -4,11 +4,9 @@ require('dotenv').config();
 
 const app = express();
 
-// Configuração de CORS para aceitar requisições da sua origem (ou todas)
 app.use(cors({ origin: "*" })); 
 app.use(express.json());
 
-// Rota principal para a IA
 app.post('/api/gemini', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY; 
 
@@ -17,7 +15,7 @@ app.post('/api/gemini', async (req, res) => {
     }
 
     try {
-        // Usando o modelo gemini-1.5-flash (compatível e rápido)
+        // Garantindo que estamos usando um modelo existente
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
         const googleResponse = await fetch(url, {
@@ -28,7 +26,11 @@ app.post('/api/gemini', async (req, res) => {
 
         const data = await googleResponse.json();
         
-        // Repassa a resposta do Google para o front-end
+        // Log importante para debug no Render:
+        if (!googleResponse.ok) {
+            console.error("Erro retornado pelo Google API:", JSON.stringify(data));
+        }
+        
         res.status(googleResponse.status).json(data);
 
     } catch (error) {
