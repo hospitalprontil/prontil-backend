@@ -14,25 +14,29 @@ app.post('/api/gemini', async (req, res) => {
         return res.status(500).json({ error: "Chave de API não configurada." });
     }
 
-    try {
-        // Mudamos de v1beta para v1 (mais estável) e garantimos o nome do modelo
-        // Se ainda der erro, troque 'gemini-1.5-flash' por 'gemini-1.5-flash-latest'
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+     try {
+        // CORREÇÃO: Usando v1beta e removendo o "-latest"
+        const url = `https://googleapis.com{apiKey}`;
         
+        // Garante que o corpo enviado segue a estrutura padrão esperada pelo Google
+        const requestBody = req.body.contents ? req.body : {
+            contents: [{ parts: [{ text: req.body.prompt || "Olá" }] }]
+        };
+
         const googleResponse = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(req.body) 
+            body: JSON.stringify(requestBody) 
         });
 
         const data = await googleResponse.json();
         
-        // Log para debug no servidor
         if (!googleResponse.ok) {
-            console.error("Erro do Google:", JSON.stringify(data));
+            console.error("Erro retornado do Google:", JSON.stringify(data));
+            return res.status(googleResponse.status).json(data);
         }
         
-        res.status(googleResponse.status).json(data);
+        res.status(200).json(data);
 
     } catch (error) {
         console.error("Erro no Proxy:", error);
