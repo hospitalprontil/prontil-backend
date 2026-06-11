@@ -1,50 +1,61 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config(); 
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Carrega as variáveis de ambiente (útil para testes locais)
+dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: "*" })); 
-app.use(express.json());
+// Middlewares essenciais
+app.use(cors()); // Permite que seu frontend faça requisições para este backend
+app.use(express.json()); // Permite que o servidor entenda JSON no corpo da requisição
 
-app.post('/api/gemini', async (req, res) => {
-    const apiKey = process.env.GEMINI_API_KEY; 
+// O Render injeta automaticamente a variável PORT. 
+// O fallback para 3000 é apenas para rodar localmente.
+const port = process.env.PORT || 3000;
 
-    if (!apiKey) {
-        return res.status(500).json({ error: "Chave de API não configurada." });
-    }
+// Validação de segurança: Impede que o servidor inicie sem a chave no Render
+if (!process.env.GEMINI_API_KEY) {
+    console.error("ERRO CRÍTICO: GEMINI_API_KEY não foi definida nas variáveis de ambiente.");
+}
 
-     try {
-        // CORREÇÃO: Usando v1beta e removendo o "-latest"
-        const url = `https://googleapis.com{apiKey}`;
-        
-        // Garante que o corpo enviado segue a estrutura padrão esperada pelo Google
-        const requestBody = req.body.contents ? req.body : {
-            contents: [{ parts: [{ text: req.body.prompt || "Olá" }] }]
-        };
+// Inicializa o SDK oficial do Google
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-        const googleResponse = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody) 
-        });
+// ROTA DE DIAGNÓSTICO (Para testar o erro 404)
+// Acesse a URL raiz do seu Render (ex: https://seu-app.onrender.com/) no navegador.
+// Se aparecer "Backend rodando", o servidor subiu e o 404 é erro de rota no frontend.
+app.get('/', (req, res) => {
+    res.status(200).json({ status: 'Backend rodando perfeitamente!' });
+});
 
-        const data = await googleResponse.json();
-        
-        if (!googleResponse.ok) {
-            console.error("Erro retornado do Google:", JSON.stringify(data));
-            return res.status(googleResponse.status).json(data);
+// ROTA DA API DO GEMINI
+// Seu frontend deve fazer um POST EXATAMENTE para: https://seu-app.onrender.com/api/chat
+app.post('/api/chat', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+
+        if (!prompt) {
+            return res.status(400).json({ error: 'O campo "prompt" é obrigatório.' });
         }
+
+        // Utiliza o modelo flash, que é rápido e o mais recomendado para textos gerais atualmente
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         
-        res.status(200).json(data);
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        res.status(200).json({ reply: text });
 
     } catch (error) {
-        console.error("Erro no Proxy:", error);
-        res.status(500).json({ error: "Erro de comunicação interna." });
+        console.error('Erro ao chamar a API do Gemini:', error);
+        res.status(500).json({ error: 'Falha ao gerar resposta do Gemini. Verifique os logs do servidor.' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
 });
