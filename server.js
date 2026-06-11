@@ -15,8 +15,9 @@ app.post('/api/gemini', async (req, res) => {
     }
 
     try {
-        // Garantindo que estamos usando um modelo existente
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Mudamos de v1beta para v1 (mais estável) e garantimos o nome do modelo
+        // Se ainda der erro, troque 'gemini-1.5-flash' por 'gemini-1.5-flash-latest'
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
         const googleResponse = await fetch(url, {
             method: 'POST',
@@ -26,9 +27,9 @@ app.post('/api/gemini', async (req, res) => {
 
         const data = await googleResponse.json();
         
-        // Log importante para debug no Render:
+        // Log para debug no servidor
         if (!googleResponse.ok) {
-            console.error("Erro retornado pelo Google API:", JSON.stringify(data));
+            console.error("Erro do Google:", JSON.stringify(data));
         }
         
         res.status(googleResponse.status).json(data);
