@@ -15,26 +15,28 @@ app.post('/api/gemini', async (req, res) => {
     }
 
     try {
-        // Usa a versão mais estável e padrão
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // Usamos gemini-1.5-flash-latest para evitar erros de not found
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
         
-        // Recebe o payload do frontend (que já vem no formato 'contents')
-        const payload = req.body;
-
+        // Enviamos o req.body exatamente como recebemos do front-end
         const googleResponse = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(req.body)
         });
 
         const data = await googleResponse.json();
         
-        // Retorna a resposta do Google para o front-end
-        res.status(googleResponse.status).json(data);
+        // Se o Google devolver erro, repassamos esse erro
+        if (!googleResponse.ok) {
+            return res.status(googleResponse.status).json(data);
+        }
+
+        res.status(200).json(data);
 
     } catch (error) {
         console.error("Erro no Proxy:", error);
-        res.status(500).json({ error: "Erro de comunicação interna." });
+        res.status(500).json({ error: "Erro de comunicação interna no Proxy" });
     }
 });
 
